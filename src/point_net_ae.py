@@ -113,7 +113,11 @@ class PointNetAutoEncoder(AutoEncoder):
         # Loop over all batches
         for _ in xrange(n_batches):
 
-            if self.is_denoising:
+            if configuration.incomplete:
+                batch_i, _, _ = train_data.next_batch(batch_size)
+                batch_i, original_data = batch_i[:, :1948, :], batch_i[:, 1948:, :]
+
+            elif self.is_denoising:
                 original_data, _, batch_i = train_data.next_batch(batch_size)
                 if batch_i is None:  # In this case the denoising concern only the augmentation.
                     batch_i = original_data
@@ -122,7 +126,7 @@ class PointNetAutoEncoder(AutoEncoder):
 
             batch_i = apply_augmentations(batch_i, configuration)   # This is a new copy of the batch.
 
-            if self.is_denoising:
+            if self.is_denoising or configuration.incomplete:
                 _, loss = fit(batch_i, original_data)
             else:
                 _, loss = fit(batch_i)

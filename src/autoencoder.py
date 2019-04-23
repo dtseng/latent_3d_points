@@ -21,7 +21,7 @@ class Configuration():
                  training_epochs=200, batch_size=10, learning_rate=0.001, denoising=False,
                  saver_step=None, train_dir=None, z_rotate=False, loss='chamfer', gauss_augment=None,
                  saver_max_to_keep=None, loss_display_step=1, debug=False,
-                 n_z=None, n_output=None, latent_vs_recon=1.0, consistent_io=None):
+                 n_z=None, n_output=None, latent_vs_recon=1.0, consistent_io=None, incomplete=False):
 
         # Parameters for any AE
         self.n_input = n_input
@@ -31,6 +31,9 @@ class Configuration():
         self.encoder = encoder
         self.encoder_args = encoder_args
         self.decoder_args = decoder_args
+
+        # For incomplete pc --> encoder --> decoder --> complete pc
+        self.incomplete = incomplete
 
         # Training related parameters
         self.batch_size = batch_size
@@ -101,7 +104,7 @@ class AutoEncoder(Neural_Net):
                 self.gt = tf.placeholder(tf.float32, out_shape)
             else:
                 self.gt = self.x
-   
+
     def partial_fit(self, X, GT=None):
         '''Trains the model with mini-batches of input data.
         If GT is not None, then the reconstruction loss compares the output of the net that is fed X, with the GT.
@@ -223,7 +226,7 @@ class AutoEncoder(Neural_Net):
             return reconstructions, data_loss, np.squeeze(feed_data), ids, np.squeeze(original_data), pre_aug
         else:
             return reconstructions, data_loss, np.squeeze(feed_data), ids, np.squeeze(original_data)
-        
+
     def embedding_at_tensor(self, dataset, conf, feed_original=True, apply_augmentation=False, tensor_name='bottleneck'):
         '''
         Observation: the NN-neighborhoods seem more reasonable when we do not apply the augmentation.
@@ -256,9 +259,9 @@ class AutoEncoder(Neural_Net):
 
         embedding = np.vstack(embedding)
         return feed, embedding, ids
-        
+
     def get_latent_codes(self, pclouds, batch_size=100):
-        ''' Convenience wrapper of self.transform to get the latent (bottle-neck) codes for a set of input point 
+        ''' Convenience wrapper of self.transform to get the latent (bottle-neck) codes for a set of input point
         clouds.
         Args:
             pclouds (N, K, 3) numpy array of N point clouds with K points each.
