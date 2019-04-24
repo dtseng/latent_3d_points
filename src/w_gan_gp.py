@@ -20,27 +20,28 @@ class W_GAN_GP(GAN):
     def __init__(self, name, learning_rate, lam, n_output, noise_dim, discriminator, generator, beta=0.5, gen_kwargs={}, disc_kwargs={}, graph=None):
 
         GAN.__init__(self, name, graph)
-        
+
         self.noise_dim = noise_dim
         self.n_output = n_output
         self.discriminator = discriminator
         self.generator = generator
-    
+
         with tf.variable_scope(name):
-            self.noise = tf.placeholder(tf.float32, shape=[None, noise_dim])            # Noise vector.
+            # self.noise = tf.placeholder(tf.float32, shape=[None, noise_dim])            # Noise vector.
             self.real_pc = tf.placeholder(tf.float32, shape=[None] + self.n_output)     # Ground-truth.
 
             with tf.variable_scope('generator'):
-                self.generator_out = self.generator(self.noise, self.n_output, **gen_kwargs)
-                
+                # self.generator_out = self.generator(self.noise, self.n_output, **gen_kwargs)
+                self.generator_out = self.generator.x_reconstr
+
             with tf.variable_scope('discriminator') as scope:
                 self.real_prob, self.real_logit = self.discriminator(self.real_pc, scope=scope, **disc_kwargs)
                 self.synthetic_prob, self.synthetic_logit = self.discriminator(self.generator_out, reuse=True, scope=scope, **disc_kwargs)
-            
-            
+
+
             # Compute WGAN losses
             self.loss_d = tf.reduce_mean(self.synthetic_logit) - tf.reduce_mean(self.real_logit)
-            self.loss_g = -tf.reduce_mean(self.synthetic_logit)
+            self.loss_g = -0.2*tf.reduce_mean(self.synthetic_logit) + 0.8*self.generator.loss
 
             # Compute gradient penalty at interpolated points
             ndims = self.real_pc.get_shape().ndims
@@ -95,15 +96,22 @@ class W_GAN_GP(GAN):
             # Loop over all batches
             for _ in xrange(iterations_for_epoch):
                 for _ in range(discriminator_boost):
-                    feed, _, _ = train_data.next_batch(batch_size)
-                    z = self.generator_noise_distribution(batch_size, self.noise_dim, **noise_params)
-                    feed_dict = {self.real_pc: feed, self.noise: z}
+                    batch_i, _, _ = train_data.next_batch(batch_size)
+                    # z is incomplete data, feed is the complete PC
+                    z, feed = batch_i[:, :1948, :], batch_i[:, 1948:, :]
+                    # z = self.generator_noise_distribution(batch_size, self.noise_dim, **noise_params)
+
+                    feed_dict = {self.real_pc: feed, self.generator.x: z}
                     _, loss_d = self.sess.run([self.opt_d, self.loss_d], feed_dict=feed_dict)
                     epoch_loss_d += loss_d
 
                 # Update generator.
-                z = self.generator_noise_distribution(batch_size, self.noise_dim, **noise_params)
-                feed_dict = {self.noise: z}
+                # z = self.generator_noise_distribution(batch_size, self.noise_dim, **noise_params)
+                batch_i, _, _ = train_data.next_batch(batch_size)
+                # z is incomplete data, feed is the complete PC
+                z, feed = batch_i[:, :1948, :], batch_i[:, 1948:, :]
+
+                feed_dict = {self.generator.x: z, self.generator.gt: feed}
                 _, loss_g = self.sess.run([self.opt_g, self.loss_g], feed_dict=feed_dict)
                 epoch_loss_g += loss_g
 

@@ -100,7 +100,7 @@ class AutoEncoder(Neural_Net):
 
         with tf.variable_scope(name):
             self.x = tf.placeholder(tf.float32, in_shape)
-            if self.is_denoising:
+            if self.is_denoising or configuration.incomplete:
                 self.gt = tf.placeholder(tf.float32, out_shape)
             else:
                 self.gt = self.x
