@@ -68,7 +68,7 @@ print 'Shape of DATA =', train_data.point_clouds.shape
 
 
 use_wgan = True     # Wasserstein with gradient penalty, or not?
-n_epochs = 10       # Epochs to train.
+n_epochs = 1000       # Epochs to train.
 
 plot_train_curve = True
 save_gan_model = True
