@@ -87,7 +87,7 @@ train_dir = create_dir(osp.join(top_out_dir, experiment_name))
 # In[8]:
 
 
-conf = Conf(n_input = [n_pc_points, 3],
+conf = Conf(n_input = [1948, 3],
             loss = ae_loss,
             # training_epochs = train_params['training_epochs'],
             training_epochs = 700,
@@ -102,7 +102,8 @@ conf = Conf(n_input = [n_pc_points, 3],
             decoder = decoder,
             encoder_args = enc_args,
             decoder_args = dec_args,
-            incomplete = True
+            incomplete = True,
+            n_output = [2048, 3]
            )
 conf.experiment_name = experiment_name
 conf.held_out_step = 5   # How often to evaluate/print out loss on
