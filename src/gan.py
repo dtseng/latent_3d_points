@@ -35,11 +35,17 @@ class GAN(Neural_Net):
         optimizer = tf.train.AdamOptimizer(initial_learning_rate, beta1=beta).minimize(loss, var_list=var_list)
         return optimizer
 
-    def generate(self, n_samples, noise_params):
-        noise = self.generator_noise_distribution(n_samples, self.noise_dim, **noise_params)
-        feed_dict = {self.noise: noise}
-        return self.sess.run([self.generator_out], feed_dict=feed_dict)[0]
-    
+    # def generate(self, n_samples, noise_params):
+    #     noise = self.generator_noise_distribution(n_samples, self.noise_dim, **noise_params)
+    #     feed_dict = {self.noise: noise}
+    #     return self.sess.run([self.generator_out], feed_dict=feed_dict)[0]
+
+    def generate(self, incomplete):
+        # incomplete is a batch of incomplete point clouds
+
+        feed_dict = {self.incomplete_input: incomplete}
+        return self.sess.run(self.generator_out, feed_dict=feed_dict)
+
     def vanilla_gan_objective(self, real_prob, synthetic_prob, use_safe_log=True):
         if use_safe_log:
             log = safe_log

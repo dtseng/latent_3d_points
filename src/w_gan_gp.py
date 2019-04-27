@@ -10,6 +10,8 @@ import tensorflow as tf
 
 from tflearn import is_training
 from . gan import GAN
+from .. external.structural_losses.tf_nndistance import nn_distance
+# from .. external.structural_losses.tf_approxmatch import approx_match, match_cost
 
 
 class W_GAN_GP(GAN):
@@ -17,7 +19,8 @@ class W_GAN_GP(GAN):
     https://arxiv.org/abs/1704.00028
     '''
 
-    def __init__(self, name, learning_rate, lam, n_output, noise_dim, discriminator, generator, beta=0.5, gen_kwargs={}, disc_kwargs={}, graph=None):
+    def __init__(self, name, learning_rate, lam, n_output, noise_dim, discriminator, generator, configuration, beta=0.5, gen_kwargs={}, disc_kwargs={}, graph=None):
+        assert noise_dim == 1948
 
         GAN.__init__(self, name, graph)
 
@@ -26,13 +29,15 @@ class W_GAN_GP(GAN):
         self.discriminator = discriminator
         self.generator = generator
 
+        c = configuration
+
         with tf.variable_scope(name):
-            # self.noise = tf.placeholder(tf.float32, shape=[None, noise_dim])            # Noise vector.
+            #  self.noise = tf.placeholder(tf.float32, shape=[None, noise_dim])            # Noise vector.
+            self.incomplete_input = tf.placeholder(tf.float32, shape=[None, noise_dim, 3])
             self.real_pc = tf.placeholder(tf.float32, shape=[None] + self.n_output)     # Ground-truth.
 
             with tf.variable_scope('generator'):
-                # self.generator_out = self.generator(self.noise, self.n_output, **gen_kwargs)
-                self.generator_out = self.generator.x_reconstr
+                self.generator_out = self.generator(self.incomplete_input, configuration, **gen_kwargs)
 
             with tf.variable_scope('discriminator') as scope:
                 self.real_prob, self.real_logit = self.discriminator(self.real_pc, scope=scope, **disc_kwargs)
@@ -40,8 +45,19 @@ class W_GAN_GP(GAN):
 
 
             # Compute WGAN losses
+            # discriminator loss
             self.loss_d = tf.reduce_mean(self.synthetic_logit) - tf.reduce_mean(self.real_logit)
-            self.loss_g = -0.2*tf.reduce_mean(self.synthetic_logit) + 0.8*self.generator.loss
+
+            # generator loss
+            cost_p1_p2, _, cost_p2_p1, _ = nn_distance(self.generator_out, self.real_pc)
+            l2_loss = tf.reduce_mean(cost_p1_p2) + tf.reduce_mean(cost_p2_p1)
+
+            # reg_losses = self.graph.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+            # w_reg_alpha = 1.0
+            # for rl in reg_losses:
+            #     self.loss += (w_reg_alpha * rl)
+
+            self.loss_g = -0.2*tf.reduce_mean(self.synthetic_logit) + 0.8*l2_loss
 
             # Compute gradient penalty at interpolated points
             ndims = self.real_pc.get_shape().ndims
@@ -101,7 +117,7 @@ class W_GAN_GP(GAN):
                     z, feed = batch_i[:, :1948, :], batch_i[:, 1948:, :]
                     # z = self.generator_noise_distribution(batch_size, self.noise_dim, **noise_params)
 
-                    feed_dict = {self.real_pc: feed, self.generator.x: z}
+                    feed_dict = {self.real_pc: feed, self.incomplete_input: z}
                     _, loss_d = self.sess.run([self.opt_d, self.loss_d], feed_dict=feed_dict)
                     epoch_loss_d += loss_d
 
@@ -111,7 +127,7 @@ class W_GAN_GP(GAN):
                 # z is incomplete data, feed is the complete PC
                 z, feed = batch_i[:, :1948, :], batch_i[:, 1948:, :]
 
-                feed_dict = {self.generator.x: z, self.generator.gt: feed}
+                feed_dict = {self.incomplete_input: z, self.real_pc: feed}
                 _, loss_g = self.sess.run([self.opt_g, self.loss_g], feed_dict=feed_dict)
                 epoch_loss_g += loss_g
 
