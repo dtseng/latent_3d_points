@@ -33,6 +33,9 @@ def mlp_discriminator(in_signal, non_linearity=tf.nn.relu, reuse=False, scope=No
 
 
 def conditional_point_cloud_generator(incomplete, configuration):
+    """
+    incomplete --> complete point cloud
+    """
     c = configuration
     z = c.encoder(incomplete, **c.encoder_args)
     layer = c.decoder(z, **c.decoder_args)
@@ -45,6 +48,32 @@ def conditional_point_cloud_generator(incomplete, configuration):
 
     x_reconstr = tf.reshape(layer, [-1, n_output[0], n_output[1]])
     return x_reconstr
+
+def conditional_missing_points_generator(incomplete, configuration):
+    """
+    Incomplete (1948, 3) --> missing points (100, 3). Then
+    concat with incomplete.
+    """
+    c = configuration
+
+    c.decoder_args['layer_sizes'] = [256, 256, 100*3]
+    z = c.encoder(incomplete, **c.encoder_args)
+    layer = c.decoder(z, **c.decoder_args)
+
+    if c.exists_and_is_not_none('close_with_tanh'):
+        layer = tf.nn.tanh(layer)
+
+    n_input = configuration.n_input
+    n_output = configuration.n_output
+
+    x_reconstr = tf.reshape(layer, [-1, 100, n_output[1]])
+    output = tf.concat([incomplete, x_reconstr], axis=1)
+    print layer
+    print("here...")
+    print 'output size:', np.prod(output.get_shape().as_list()[1:]), '\n'
+
+    return output
+
 
 def point_cloud_generator(z, pc_dims, layer_sizes=[64, 128, 512, 1024], non_linearity=tf.nn.relu, b_norm=False, b_norm_last=False, dropout_prob=None):
     ''' used in nips submission.

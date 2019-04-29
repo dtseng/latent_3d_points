@@ -63,16 +63,19 @@ def encoder_with_convs_and_symmetry(in_signal, n_filters=[64, 128, 256, 1024], f
         if dropout_prob is not None and dropout_prob[i] > 0:
             layer = dropout(layer, 1.0 - dropout_prob[i])
 
-        if verbose:
+        if True:
             print layer
+            print("here...")
             print 'output size:', np.prod(layer.get_shape().as_list()[1:]), '\n'
 
     if symmetry is not None:
+        print("symmetry")
         layer = symmetry(layer, axis=1)
         if verbose:
             print layer
 
     if closing is not None:
+        print("closing")
         layer = closing(layer)
         print layer
 

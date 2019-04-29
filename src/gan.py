@@ -18,10 +18,14 @@ class GAN(Neural_Net):
 
     def save_model(self, tick):
         self.saver.save(self.sess, self.MODEL_SAVER_ID, global_step=tick)
+        print("model saver id: ", self.MODEL_SAVER_ID)
 
     def restore_model(self, model_path, epoch, verbose=False):
         '''Restore all the variables of a saved model.
         '''
+        
+
+        self.MODEL_SAVER_ID = 'models.ckpt'
         self.saver.restore(self.sess, osp.join(model_path, self.MODEL_SAVER_ID + '-' + str(int(epoch))))
 
         if self.epoch.eval(session=self.sess) != epoch:

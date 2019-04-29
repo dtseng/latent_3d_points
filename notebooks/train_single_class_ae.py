@@ -36,7 +36,7 @@ from latent_3d_points.src.general_utils import plot_3d_point_cloud
 top_out_dir = '../data/'          # Use to save Neural-Net check-points etc.
 top_in_dir = '../data/shape_net_core_uniform_samples_2048/' # Top-dir of where point-clouds are stored.
 
-experiment_name = 'single_class_ae'
+experiment_name = 'test'
 n_pc_points = 2048                # Number of points per model.
 bneck_size = 128                  # Bottleneck-AE size
 ae_loss = 'chamfer'                   # Loss to optimize: 'emd' or 'chamfer'

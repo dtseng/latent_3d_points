@@ -68,7 +68,7 @@ print 'Shape of DATA =', train_data.point_clouds.shape
 
 
 use_wgan = True     # Wasserstein with gradient penalty, or not?
-n_epochs = 1000       # Epochs to train.
+n_epochs = 2000       # Epochs to train.
 
 plot_train_curve = True
 save_gan_model = True
@@ -112,7 +112,7 @@ conf = Conf(n_input = [1948, 3],
             n_output = [2048, 3]
            )
 conf.experiment_name = experiment_name
-generator = conditional_point_cloud_generator
+generator = conditional_missing_points_generator
 
 if save_synthetic_samples:
     synthetic_data_out_dir = osp.join(top_out_dir, 'OUT/synthetic_samples/', experiment_name)
