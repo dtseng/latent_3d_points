@@ -68,7 +68,7 @@ def conditional_missing_points_generator(incomplete, configuration):
 
     x_reconstr = tf.reshape(layer, [-1, 100, n_output[1]])
     output = tf.concat([incomplete, x_reconstr], axis=1)
-    print layer
+    print output
     print("here...")
     print 'output size:', np.prod(output.get_shape().as_list()[1:]), '\n'
 

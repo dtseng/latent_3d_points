@@ -43,7 +43,6 @@ class W_GAN_GP(GAN):
                 self.real_prob, self.real_logit = self.discriminator(self.real_pc, scope=scope, **disc_kwargs)
                 self.synthetic_prob, self.synthetic_logit = self.discriminator(self.generator_out, reuse=True, scope=scope, **disc_kwargs)
 
-
             # Compute WGAN losses
             # discriminator loss
             self.loss_d = tf.reduce_mean(self.synthetic_logit) - tf.reduce_mean(self.real_logit)
@@ -56,8 +55,12 @@ class W_GAN_GP(GAN):
             # w_reg_alpha = 1.0
             # for rl in reg_losses:
             #     self.loss += (w_reg_alpha * rl)
+            self.g_reconstr_loss = 10000/2.*l2_loss
+            self.g_disc_loss = -0.5*tf.reduce_mean(self.synthetic_logit)
 
-            self.loss_g = -0.2*tf.reduce_mean(self.synthetic_logit) + 0.8*l2_loss
+            # self.loss_g = -0.2*self.g_disc_loss + 0.8*self.g_reconstr_loss
+            self.loss_g = self.g_disc_loss + self.g_reconstr_loss
+
 
             # Compute gradient penalty at interpolated points
             ndims = self.real_pc.get_shape().ndims
@@ -101,6 +104,8 @@ class W_GAN_GP(GAN):
         n_examples = train_data.num_examples
         epoch_loss_d = 0.
         epoch_loss_g = 0.
+        epoch_g_disc_loss = 0.
+        epoch_g_reconstr_loss = 0.
         batch_size = batch_size
         n_batches = int(n_examples / batch_size)
         start_time = time.time()
@@ -128,8 +133,10 @@ class W_GAN_GP(GAN):
                 z, feed = batch_i[:, :1948, :], batch_i[:, 1948:, :]
 
                 feed_dict = {self.incomplete_input: z, self.real_pc: feed}
-                _, loss_g = self.sess.run([self.opt_g, self.loss_g], feed_dict=feed_dict)
+                _, loss_g, g_disc_loss, g_reconstr_loss = self.sess.run([self.opt_g, self.loss_g, self.g_disc_loss, self.g_reconstr_loss], feed_dict=feed_dict)
                 epoch_loss_g += loss_g
+                epoch_g_disc_loss += g_disc_loss
+                epoch_g_reconstr_loss += g_reconstr_loss
 
             is_training(False, session=self.sess)
         except Exception:
@@ -138,5 +145,8 @@ class W_GAN_GP(GAN):
             is_training(False, session=self.sess)
         epoch_loss_d /= (iterations_for_epoch * discriminator_boost)
         epoch_loss_g /= iterations_for_epoch
+        epoch_g_disc_loss /= iterations_for_epoch
+        epoch_g_reconstr_loss /= iterations_for_epoch
+
         duration = time.time() - start_time
-        return (epoch_loss_d, epoch_loss_g), duration
+        return (epoch_loss_d, epoch_loss_g, epoch_g_reconstr_loss, epoch_g_disc_loss), duration

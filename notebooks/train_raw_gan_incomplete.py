@@ -7,7 +7,7 @@
 
 # In[2]:
 import logging
-logging.basicConfig(level=logging.INFO, filename="raw_gan_incomplete.txt", filemode="a+",
+logging.basicConfig(level=logging.INFO, filename="raw_gan_incomplete_100_concat.txt", filemode="a+",
                         format="%(asctime)-15s %(levelname)-8s %(message)s")
 import sys
 sys.path.insert(0, "/home/ubuntu")
@@ -29,7 +29,7 @@ from latent_3d_points.src.tf_utils import reset_tf_graph
 
 from latent_3d_points.src.vanilla_gan import Vanilla_GAN
 from latent_3d_points.src.w_gan_gp import W_GAN_GP
-from latent_3d_points.src.generators_discriminators import point_cloud_generator,mlp_discriminator, leaky_relu, conditional_point_cloud_generator
+from latent_3d_points.src.generators_discriminators import point_cloud_generator,mlp_discriminator, leaky_relu, conditional_point_cloud_generator, conditional_missing_points_generator
 
 
 
@@ -39,7 +39,7 @@ top_out_dir = '../data/'
 # Top-dir of where point-clouds are stored.
 top_in_dir = '../data/shape_net_core_uniform_samples_2048/'
 
-experiment_name = 'raw_gan_incomplete'
+experiment_name = 'raw_gan_incomplete_100_concat'
 
 n_pc_points = 2048                # Number of points per model.
 bneck_size = 128                  # Bottleneck-AE size
