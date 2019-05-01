@@ -7,10 +7,10 @@
 
 # In[2]:
 import logging
-logging.basicConfig(level=logging.INFO, filename="raw_gan_incomplete_100_concat.txt", filemode="a+",
-                        format="%(asctime)-15s %(levelname)-8s %(message)s")
+from imp import reload
+import h2o
 import sys
-sys.path.insert(0, "/home/ubuntu")
+sys.path.insert(0, "/home")
 import numpy as np
 import os.path as osp
 import matplotlib.pylab as plt
@@ -31,15 +31,25 @@ from latent_3d_points.src.vanilla_gan import Vanilla_GAN
 from latent_3d_points.src.w_gan_gp import W_GAN_GP
 from latent_3d_points.src.generators_discriminators import point_cloud_generator,mlp_discriminator, leaky_relu, conditional_point_cloud_generator, conditional_missing_points_generator
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('exp_name', type=str)
+parser.add_argument('--reconstr_param', type=float, default=5000)
+parser.add_argument('--disc_param', type=float, default=0.5)
+parser.add_argument('--epochs', type=int, default=2000)
+parser.add_argument('--lr', type=float, default=0.0001)
+args = parser.parse_args()
 
-
-# Use to save Neural-Net check-points etc.
+reload(logging)
+logging.basicConfig(level=logging.INFO, filename="{}.txt".format(args.exp_name), filemode="a+",
+                        format="%(asctime)-15s %(levelname)-8s %(message)s")
+logging.info("Starting log. ")
 top_out_dir = '../data/'
 
 # Top-dir of where point-clouds are stored.
 top_in_dir = '../data/shape_net_core_uniform_samples_2048/'
 
-experiment_name = 'raw_gan_incomplete_100_concat'
+experiment_name = args.exp_name
 
 n_pc_points = 2048                # Number of points per model.
 bneck_size = 128                  # Bottleneck-AE size
@@ -49,14 +59,14 @@ class_name = 'chair'
 
 
 # In[5]:
-
-
+logging.info('Reconstr param: {}'.format(args.reconstr_param))
+logging.info('Disc param: {}'.format(args.disc_param))
 
 # all_pc_data = load_all_point_clouds_under_folder(class_dir, n_threads=8, file_ending='.ply', verbose=True)
-train_pkl = unpickle_data('/home/ubuntu/latent_3d_points/data/missing_points_dataset/train_data.pkl')
+train_pkl = unpickle_data('/home/latent_3d_points/data/missing_points_dataset/train_data.pkl')
 train_data = next(train_pkl)
 
-val_pkl = unpickle_data('/home/ubuntu/latent_3d_points/data/missing_points_dataset/val_data.pkl')
+val_pkl = unpickle_data('/home/latent_3d_points/data/missing_points_dataset/val_data.pkl')
 val_data = next(val_pkl)
 
 print 'Shape of DATA =', train_data.point_clouds.shape
@@ -68,7 +78,7 @@ print 'Shape of DATA =', train_data.point_clouds.shape
 
 
 use_wgan = True     # Wasserstein with gradient penalty, or not?
-n_epochs = 2000       # Epochs to train.
+n_epochs = args.epochs       # Epochs to train.
 
 plot_train_curve = True
 save_gan_model = True
@@ -80,7 +90,7 @@ save_synthetic_samples = True
 n_syn_samples = train_data.num_examples
 
 # Optimization parameters
-init_lr = 0.0001
+init_lr = args.lr
 batch_size = 50
 noise_params = {'mu':0, 'sigma': 0.2}
 # noise_dim = 128
@@ -131,7 +141,7 @@ if use_wgan:
     disc_kwargs = {'b_norm': False}
     gan = W_GAN_GP(experiment_name, init_lr, lam, n_out, noise_dim,
                     discriminator, generator, conf,
-                    disc_kwargs=disc_kwargs, beta=beta)
+                    disc_kwargs=disc_kwargs, beta=beta, reconstr_param=args.reconstr_param, disc_param=args.disc_param)
 
 else:
     leak = 0.2

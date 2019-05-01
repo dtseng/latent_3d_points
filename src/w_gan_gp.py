@@ -19,7 +19,7 @@ class W_GAN_GP(GAN):
     https://arxiv.org/abs/1704.00028
     '''
 
-    def __init__(self, name, learning_rate, lam, n_output, noise_dim, discriminator, generator, configuration, beta=0.5, gen_kwargs={}, disc_kwargs={}, graph=None):
+    def __init__(self, name, learning_rate, lam, n_output, noise_dim, discriminator, generator, configuration, beta=0.5, gen_kwargs={}, disc_kwargs={}, reconstr_param=None, disc_param=None, graph=None):
         assert noise_dim == 1948
 
         GAN.__init__(self, name, graph)
@@ -55,8 +55,8 @@ class W_GAN_GP(GAN):
             # w_reg_alpha = 1.0
             # for rl in reg_losses:
             #     self.loss += (w_reg_alpha * rl)
-            self.g_reconstr_loss = 10000/2.*l2_loss
-            self.g_disc_loss = -0.5*tf.reduce_mean(self.synthetic_logit)
+            self.g_reconstr_loss = reconstr_param*l2_loss
+            self.g_disc_loss = -disc_param*tf.reduce_mean(self.synthetic_logit)
 
             # self.loss_g = -0.2*self.g_disc_loss + 0.8*self.g_reconstr_loss
             self.loss_g = self.g_disc_loss + self.g_reconstr_loss
