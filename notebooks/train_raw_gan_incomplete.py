@@ -63,10 +63,15 @@ logging.info('Reconstr param: {}'.format(args.reconstr_param))
 logging.info('Disc param: {}'.format(args.disc_param))
 
 # all_pc_data = load_all_point_clouds_under_folder(class_dir, n_threads=8, file_ending='.ply', verbose=True)
-train_pkl = unpickle_data('/home/latent_3d_points/data/missing_points_dataset/train_data.pkl')
+# train_pkl = unpickle_data('/home/latent_3d_points/data/missing_points_dataset/train_data.pkl')
+
+print('/latent_data/multiclass/train_data.pkl')
+
+train_pkl = unpickle_data('/latent_data/multiclass/train_data.pkl')
 train_data = next(train_pkl)
 
-val_pkl = unpickle_data('/home/latent_3d_points/data/missing_points_dataset/val_data.pkl')
+# val_pkl = unpickle_data('/home/latent_3d_points/data/missing_points_dataset/val_data.pkl')
+val_pkl = unpickle_data('/latent_data/multiclass/val_data.pkl')
 val_data = next(val_pkl)
 
 print 'Shape of DATA =', train_data.point_clouds.shape
